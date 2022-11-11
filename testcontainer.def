@@ -1,0 +1,46 @@
+Bootstrap: library
+From: ubuntu:18.04
+Stage: build
+
+%setup
+    touch /file1
+    touch ${SINGULARITY_ROOTFS}/file2
+
+%files
+    /file1
+    /file1 /opt
+
+%environment
+    export LISTEN_PORT=12345
+    export LC_ALL=C
+
+%post
+    echo "Hello from inside the container"
+    apt-get update && apt-get install -y netcat
+    NOW=`date`
+    echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+
+%runscript
+    echo "This is what happens when you run the container..."
+    echo "Container was created $NOW"
+    echo "Arguments received: $*"
+    exec echo "$@"
+
+%startscript
+    nc -lp $LISTEN_PORT
+
+%test
+    grep -q NAME=\"Ubuntu\" /etc/os-release
+    if [ $? -eq 0 ]; then
+        echo "Container base is Ubuntu as expected."
+    else
+        echo "Container base is not Ubuntu."
+    fi
+
+%labels
+    Author JacobCT
+    Version v0.0.1
+
+%help
+    This container is used as a test/reference file for building future containers. It is based
+	off of the example filed provided by singularity.
